@@ -9,7 +9,7 @@ Intégration personnalisée Home Assistant pour exploiter le capteur de puissanc
 - Configuration depuis l'interface Home Assistant, sans modifier `configuration.yaml`.
 - Sélection du capteur source, avec `sensor.arsun_routeur_injection_soutirage` proposé par défaut.
 - Exposition de la valeur ARSUN originale, avec son signe conservé.
-- Exposition d'une seconde valeur avec le signe inversé, pratique pour une jauge.
+- Exposition d’un capteur dédié à la jauge, conservant le signe ARSUN pour afficher les valeurs négatives et positives.
 - Séparation de la puissance instantanée de soutirage et d'injection.
 - Deux compteurs d'énergie cumulée en kWh : soutirage et injection.
 - Restauration des compteurs après redémarrage de Home Assistant.
@@ -24,12 +24,12 @@ Cette intégration applique la convention confirmée pour le capteur ARSUN utili
 | Négative | Injection vers le réseau | Puissance injectée |
 | Zéro | Équilibre | 0 W des deux côtés |
 
-La valeur originale reste disponible sans inversion. Le capteur « Puissance jauge » fournit la valeur inversée.
+La valeur originale reste disponible sans inversion. Le capteur « Puissance jauge » conserve lui aussi le signe ARSUN : négatif pour l’injection, positif pour le soutirage.
 
 ## Entités créées
 
 - **Puissance réseau (origine)** : valeur signée originale en W.
-- **Puissance jauge** : valeur signée inversée en W.
+- **Puissance jauge** : valeur signée en W, négative en injection et positive en soutirage.
 - **Puissance soutirée** : puissance positive uniquement lorsque le réseau alimente l'installation.
 - **Puissance injectée** : puissance positive uniquement lorsque l'installation injecte vers le réseau.
 - **Énergie soutirée** : compteur cumulatif en kWh, restauré après redémarrage.
@@ -41,9 +41,9 @@ Les identifiants d'entités définitifs sont attribués par Home Assistant et pe
 
 Après publication du dépôt sur GitHub :
 
-1. Ouvrir **HACS → Intégrations**.
-2. Ouvrir le menu ⋮ puis **Dépôts personnalisés**.
-3. Ajouter l'URL GitHub du dépôt avec la catégorie **Intégration**.
+1. Ouvrir **HACS → Marketplace**.
+2. Ouvrir le menu ⋮ puis **Ajouter depuis un lien**.
+3. Ajouter `https://github.com/solairedomotique/ha-arsun-energy` et choisir **Intégration** si demandé.
 4. Rechercher **ARSUN Energy**, puis installer l'intégration.
 5. Redémarrer Home Assistant.
 6. Aller dans **Paramètres → Appareils et services → Ajouter une intégration**.
@@ -79,7 +79,7 @@ severity:
   red: 2500
 ```
 
-Avec cette valeur inversée, l'injection apparaît du côté négatif et le soutirage du côté positif.
+Le capteur conserve le signe ARSUN : injection à gauche (négatif, vert) et soutirage à droite (positif, rouge). Dans l'éditeur visuel de la carte Jauge, sélectionne cette entité et règle les limites minimale et maximale selon la puissance de l'installation. Aucun capteur Template ni modification de `configuration.yaml` n'est nécessaire.
 
 ## Informations techniques
 

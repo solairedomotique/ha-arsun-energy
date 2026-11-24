@@ -1,12 +1,10 @@
 {
   "domain": "arsun_energy",
   "name": "ARSUN Energy",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "documentation": "https://github.com/solairedomotique/ha-arsun-energy",
   "issue_tracker": "https://github.com/solairedomotique/ha-arsun-energy/issues",
-  "codeowners": [
-    "@solairedomotique"
-  ],
+  "codeowners": [],
   "config_flow": true,
   "iot_class": "calculated",
   "requirements": []

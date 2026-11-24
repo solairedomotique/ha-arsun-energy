@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+- Le capteur « Puissance jauge » conserve désormais le signe ARSUN : négatif en injection et positif en soutirage.
+- Utilisation directe dans une carte Jauge à plage négative/positive (min/max configurables dans l’éditeur visuel).
+- Correction des URL de documentation et de suivi GitHub.
+- Documentation mise à jour pour HACS Marketplace.
+
+
 ## 0.1.3
 - Ajout de la valeur ARSUN originale, signe conservé.
 - Ajout d'un capteur séparé avec signe inversé pour les jauges.
