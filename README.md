@@ -9,7 +9,7 @@ Intégration personnalisée Home Assistant pour exploiter le capteur de puissanc
 - Configuration depuis l'interface Home Assistant, sans modifier `configuration.yaml`.
 - Sélection du capteur source, avec `sensor.arsun_routeur_injection_soutirage` proposé par défaut.
 - Exposition de la valeur ARSUN originale, avec son signe conservé.
-- Exposition d’un capteur dédié à la jauge, conservant le signe ARSUN pour afficher les valeurs négatives et positives.
+- Exposition d’un capteur dédié à la jauge, avec le signe inversé pour afficher l’injection en positif et le soutirage en négatif.
 - Séparation de la puissance instantanée de soutirage et d'injection.
 - Deux compteurs d'énergie cumulée en kWh : soutirage et injection.
 - Restauration des compteurs après redémarrage de Home Assistant.
@@ -24,12 +24,12 @@ Cette intégration applique la convention confirmée pour le capteur ARSUN utili
 | Négative | Injection vers le réseau | Puissance injectée |
 | Zéro | Équilibre | 0 W des deux côtés |
 
-La valeur originale reste disponible sans inversion. Le capteur « Puissance jauge » conserve lui aussi le signe ARSUN : négatif pour l’injection, positif pour le soutirage.
+La valeur originale reste disponible sans inversion. Le capteur « Puissance jauge » inverse volontairement le signe : positif pour l’injection, négatif pour le soutirage.
 
 ## Entités créées
 
 - **Puissance réseau (origine)** : valeur signée originale en W.
-- **Puissance jauge** : valeur signée en W, négative en injection et positive en soutirage.
+- **Puissance jauge** : valeur signée en W, positive en injection et négative en soutirage.
 - **Puissance soutirée** : puissance positive uniquement lorsque le réseau alimente l'installation.
 - **Puissance injectée** : puissance positive uniquement lorsque l'installation injecte vers le réseau.
 - **Énergie soutirée** : compteur cumulatif en kWh, restauré après redémarrage.
@@ -79,12 +79,12 @@ severity:
   red: 2500
 ```
 
-Le capteur conserve le signe ARSUN : injection à gauche (négatif, vert) et soutirage à droite (positif, rouge). Dans l'éditeur visuel de la carte Jauge, sélectionne cette entité et règle les limites minimale et maximale selon la puissance de l'installation. Aucun capteur Template ni modification de `configuration.yaml` n'est nécessaire.
+Le capteur inverse le signe ARSUN pour la jauge : injection à droite (positif) et soutirage à gauche (négatif). Dans l'éditeur visuel de la carte Jauge, sélectionne cette entité et règle les limites minimale et maximale selon la puissance de l'installation. Aucun capteur Template ni modification de `configuration.yaml` n'est nécessaire.
 
 ## Informations techniques
 
 - Domaine : `arsun_energy`
-- Version : `0.1.3`
+- Version : `0.2.1`
 - Plateforme : Home Assistant – Sensor
 - Configuration : UI (Config Flow)
 - Dépendances Python externes : aucune

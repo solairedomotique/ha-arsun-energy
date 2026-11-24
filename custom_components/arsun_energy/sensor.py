@@ -164,9 +164,9 @@ class ArsunOriginalPowerSensor(SensorEntity):
 class ArsunGaugePowerSensor(SensorEntity):
     """Signed power sensor for a bipolar Home Assistant gauge.
 
-    Keep the ARSUN sign convention unchanged: positive is grid consumption,
-    negative is export. Set a negative minimum and positive maximum on the
-    Lovelace gauge card to display both directions around zero.
+    Invert the ARSUN sign for an intuitive bipolar gauge: positive is export,
+    negative is grid consumption. Set a negative minimum and positive maximum
+    on the Lovelace gauge card to display both directions around zero.
     """
 
     _attr_has_entity_name = True
@@ -213,8 +213,9 @@ class ArsunGaugePowerSensor(SensorEntity):
         elif unit != "W":
             self._attr_native_value = None
             return
-        # Preserve ARSUN sign: positive = grid consumption, negative = export.
-        self._attr_native_value = value
+        # Gauge convention requested by the user: positive = export,
+        # negative = grid consumption. The original sensor remains unchanged.
+        self._attr_native_value = -value
 
 
 class ArsunEnergySensor(ArsunBaseSensor, RestoreEntity):

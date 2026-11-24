@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+- Correction du signe du capteur « Puissance jauge » : injection positive, soutirage négatif.
+- La valeur ARSUN originale reste inchangée.
+- Les capteurs séparés et les compteurs d'énergie conservent leur convention et leur calcul précédents.
+
+
 ## 0.2.0
 - Le capteur « Puissance jauge » conserve désormais le signe ARSUN : négatif en injection et positif en soutirage.
 - Utilisation directe dans une carte Jauge à plage négative/positive (min/max configurables dans l’éditeur visuel).
