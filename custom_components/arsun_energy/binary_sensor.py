@@ -29,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class ArsunForcedModeBinarySensor(BinarySensorEntity):
-    """Indicates whether one ARSUN output is forced (LED state H)."""
+    """Indicates whether one ARSUN output is forced (LED state H or P)."""
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:flash"
@@ -55,4 +55,4 @@ class ArsunForcedModeBinarySensor(BinarySensorEntity):
 
     def _update(self):
         state = self.hass.states.get(self.source)
-        self._attr_is_on = state is not None and state.state.upper() == "H"
+        self._attr_is_on = state is not None and state.state.upper() in ("H", "P")

@@ -53,4 +53,15 @@ La mesure `injection_soutirage` représente le bilan réseau global de l'install
 
 ## Développement
 
-Version actuelle : 0.3.2.
+Version actuelle : 0.3.3.
+
+
+### États des sorties ARSUN
+Les états des canaux sont également exposés sous forme de capteurs de mode :
+- `H` : Forcé H1H2
+- `P` : Programme Horaire
+- `---` : Automatique en attente de surplus
+- `ON` : Surplus alimentant le chauffe-eau
+- `OFF` : Sortie non alimentée
+
+Les états `H` et `P` déclenchent la même répartition estimative de la puissance réseau entre les deux cumulus.

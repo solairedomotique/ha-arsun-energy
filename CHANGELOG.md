@@ -1,3 +1,9 @@
+## 0.3.3
+- Treat ARSUN LED states `H` (Forcé H1H2) and `P` (Programme Horaire) as equivalent forced modes for the heater solar/grid allocation.
+- Keep the binary forced-mode indicators active for both `H` and `P`.
+- Add readable operating-mode sensors for channels 1 and 2, mapping `H`, `P`, `---`, `ON`, and `OFF` to their French descriptions.
+- Preserve the existing power sensors, energy counters, entity names, and Home Assistant Energy metadata.
+
 ## 0.3.2
 - Added instantaneous power sensors for ARSUN outputs 1 and 2 (W).
 - Preserved all existing sensor names and entity unique IDs.

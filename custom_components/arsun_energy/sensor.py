@@ -39,17 +39,17 @@ def _split_heater_power(hass):
     """Return solar/grid W for outputs 1 and 2.
 
     ARSUN grid convention: negative = import from EDF, positive = export.
-    If either LED reports H, grid import is allocated proportionally across
-    the measured heater output powers. Otherwise all measured output power
-    is classified as solar, as agreed for this integration.
+    If either LED reports H or P, grid import is allocated proportionally
+    across the measured heater output powers. Otherwise all measured output
+    power is classified as solar, as agreed for this integration.
     """
     p1 = max(0.0, _number(hass, OUTPUT_1_ENTITY))
     p2 = max(0.0, _number(hass, OUTPUT_2_ENTITY))
     led1 = hass.states.get(LED_1_ENTITY)
     led2 = hass.states.get(LED_2_ENTITY)
     forced = (
-        (led1 is not None and led1.state.upper() == "H")
-        or (led2 is not None and led2.state.upper() == "H")
+        (led1 is not None and led1.state.upper() in ("H", "P"))
+        or (led2 is not None and led2.state.upper() in ("H", "P"))
     )
     if not forced:
         return {"s1_solar": p1, "s1_grid": 0.0, "s2_solar": p2, "s2_grid": 0.0}
@@ -83,6 +83,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         ArsunOriginalPowerSensor(hass, entry, source, device),
         ArsunOutputPowerSensor(hass, entry, OUTPUT_1_ENTITY, "1", device),
         ArsunOutputPowerSensor(hass, entry, OUTPUT_2_ENTITY, "2", device),
+        ArsunOutputModeSensor(hass, entry, LED_1_ENTITY, "1", device),
+        ArsunOutputModeSensor(hass, entry, LED_2_ENTITY, "2", device),
         ArsunGridSplitPowerSensor(hass, entry, source, "consumption", device),
         ArsunGridSplitPowerSensor(hass, entry, source, "export", device),
         ArsunGaugePowerSensor(hass, entry, source, device),
@@ -150,6 +152,48 @@ class ArsunOutputPowerSensor(SensorEntity):
 
     def _update(self):
         self._attr_native_value = max(0.0, _number(self.hass, self.source))
+
+
+class ArsunOutputModeSensor(SensorEntity):
+    """Human-readable ARSUN operating mode for one output."""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:state-machine"
+
+    STATE_LABELS = {
+        "H": "Forcé H1H2",
+        "P": "Programme Horaire",
+        "---": "Automatique en attente de surplus",
+        "ON": "Surplus alimentant le chauffe-eau",
+        "OFF": "Sortie non alimentée",
+    }
+
+    def __init__(self, hass, entry, source, channel, device):
+        self.hass = hass
+        self.source = source
+        self._attr_device_info = device
+        self._attr_unique_id = f"{entry.entry_id}_output_{channel}_mode"
+        self._attr_name = f"Mode canal {channel}"
+        self._attr_native_value = None
+
+    async def async_added_to_hass(self):
+        self._update()
+        self.async_on_remove(
+            async_track_state_change_event(self.hass, [self.source], self._changed)
+        )
+
+    @callback
+    def _changed(self, event):
+        self._update()
+        self.async_write_ha_state()
+
+    def _update(self):
+        state = self.hass.states.get(self.source)
+        if state is None:
+            self._attr_native_value = None
+            return
+        raw = state.state.strip().upper()
+        self._attr_native_value = self.STATE_LABELS.get(raw, raw)
 
 
 class ArsunGridSplitPowerSensor(SensorEntity):
