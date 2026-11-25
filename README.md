@@ -1,94 +1,52 @@
-# ARSUN Energy – Home Assistant
+# ARSUN Energy
 
-Intégration personnalisée Home Assistant pour exploiter le capteur de puissance instantanée du routeur ARSUN et distinguer le soutirage réseau de l'injection.
+Intégration personnalisée Home Assistant pour le routeur ARSUN, par Solaire Domotique.
 
-> Projet communautaire indépendant réalisé par **Solaire Domotique**. Il ne s'agit pas d'une intégration officielle ARSUN.
+## Installation via Home Assistant Marketplace
 
-## Fonctionnalités
+1. Ouvrir **Marketplace**.
+2. Menu ⋮ → Ajouter un dépôt depuis un lien.
+3. Ajouter `https://github.com/solairedomotique/ha-arsun-energy`.
+4. Rechercher **ARSUN Energy**, installer puis redémarrer Home Assistant.
+5. Ajouter l'intégration et sélectionner le capteur réseau. Par défaut : `sensor.arsun_routeur_injection_soutirage`.
 
-- Configuration depuis l'interface Home Assistant, sans modifier `configuration.yaml`.
-- Sélection du capteur source, avec `sensor.arsun_routeur_injection_soutirage` proposé par défaut.
-- Exposition de la valeur ARSUN originale, avec son signe conservé.
-- Exposition d’un capteur dédié à la jauge, avec le signe inversé pour afficher l’injection en positif et le soutirage en négatif.
-- Séparation de la puissance instantanée de soutirage et d'injection.
-- Deux compteurs d'énergie cumulée en kWh : soutirage et injection.
-- Restauration des compteurs après redémarrage de Home Assistant.
+## Convention de signe
 
-## Convention de signe ARSUN
+- `sensor.arsun_routeur_injection_soutirage` négatif : consommation depuis EDF.
+- Le même capteur positif : énergie renvoyée vers EDF.
+- `sensor.arsun_routeur_sortie_1` et `_sortie_2` : puissances instantanées positives des récepteurs, en W.
 
-Cette intégration applique la convention confirmée pour le capteur ARSUN utilisé :
+Le capteur **Puissance jauge** conserve le signe ARSUN : positif = injection EDF, négatif = consommation EDF.
 
-| Valeur source | Signification | Capteur séparé |
-|---|---|---|
-| Positive | Soutirage / consommation depuis EDF | Puissance soutirée |
-| Négative | Injection vers le réseau | Puissance injectée |
-| Zéro | Équilibre | 0 W des deux côtés |
+## Capteurs créés
 
-La valeur originale reste disponible sans inversion. Le capteur « Puissance jauge » inverse volontairement le signe : positif pour l’injection, négatif pour le soutirage.
+- Puissance réseau d'origine.
+- Puissance consommée EDF et puissance redonnée à EDF.
+- Énergie consommée EDF et énergie redonnée à EDF (compteurs cumulatifs).
+- Puissance jauge bidirectionnelle.
+- Cumulus sortie 1 solaire / réseau (kWh).
+- Cumulus sortie 2 solaire / réseau (kWh).
 
-## Entités créées
+## Répartition énergétique des cumulus
 
-- **Puissance réseau (origine)** : valeur signée originale en W.
-- **Puissance jauge** : valeur signée en W, positive en injection et négative en soutirage.
-- **Puissance soutirée** : puissance positive uniquement lorsque le réseau alimente l'installation.
-- **Puissance injectée** : puissance positive uniquement lorsque l'installation injecte vers le réseau.
-- **Énergie soutirée** : compteur cumulatif en kWh, restauré après redémarrage.
-- **Énergie injectée** : compteur cumulatif en kWh, restauré après redémarrage.
+Entités lues automatiquement :
+- `sensor.arsun_routeur_sortie_1`
+- `sensor.arsun_routeur_sortie_2`
+- `sensor.arsun_routeur_etat_led_s1`
+- `sensor.arsun_routeur_etat_led_s2`
+- `sensor.arsun_routeur_injection_soutirage`
 
-Les identifiants d'entités définitifs sont attribués par Home Assistant et peuvent dépendre du nom choisi lors de l'installation.
+Le mode forcé global est actif si **LED S1 = H OU LED S2 = H**.
 
-## Installation via HACS
+- Si aucune LED n'est `H`, les puissances mesurées des sorties sont affectées au solaire.
+- Si au moins une LED est `H`, la puissance soutirée depuis EDF (valeur négative du capteur réseau) est répartie proportionnellement entre les deux sorties, selon leurs puissances instantanées. La part restante de chaque sortie est affectée au solaire.
+- Une sortie à 0 W ne reçoit aucune énergie.
+- Les quatre compteurs sont cumulatifs et restaurés après redémarrage.
 
-Après publication du dépôt sur GitHub :
+### Limite importante de la méthode
 
-1. Ouvrir **HACS → Marketplace**.
-2. Ouvrir le menu ⋮ puis **Ajouter depuis un lien**.
-3. Ajouter `https://github.com/solairedomotique/ha-arsun-energy` et choisir **Intégration** si demandé.
-4. Rechercher **ARSUN Energy**, puis installer l'intégration.
-5. Redémarrer Home Assistant.
-6. Aller dans **Paramètres → Appareils et services → Ajouter une intégration**.
-7. Rechercher **ARSUN Energy** et sélectionner le capteur source.
+La mesure `injection_soutirage` représente le bilan réseau global de l'installation, pas une mesure dédiée aux cumulus. En mode forcé, la répartition proportionnelle suppose donc que l'import EDF mesuré peut être attribué aux deux cumulus. Les autres consommations de la maison peuvent influencer cette estimation. Pour une mesure parfaitement exacte, il faudrait une mesure dédiée à l'alimentation des cumulus.
 
-## Installation manuelle
+## Développement
 
-1. Copier `custom_components/arsun_energy` dans `/config/custom_components/arsun_energy`.
-2. Redémarrer Home Assistant.
-3. Ajouter l'intégration depuis **Paramètres → Appareils et services**.
-
-## Compteurs d'énergie : méthode et limites
-
-Les compteurs sont calculés à partir des changements d'état du capteur source, par intégration trapézoïdale de la puissance instantanée. Leur valeur est restaurée après un redémarrage de Home Assistant.
-
-L'énergie consommée pendant une période où Home Assistant est arrêté ou où le capteur ne fournit pas de mesure n'est pas reconstituée. La précision dépend donc de la fréquence de mise à jour du capteur ARSUN.
-
-## Carte jauge Lovelace
-
-Exemple à adapter à l'identifiant attribué au capteur :
-
-```yaml
-type: gauge
-entity: sensor.arsun_energy_puissance_jauge
-name: ARSUN Injection / Soutirage
-min: -6000
-max: 6000
-needle: true
-unit: W
-severity:
-  green: -6000
-  yellow: 0
-  red: 2500
-```
-
-Le capteur inverse le signe ARSUN pour la jauge : injection à droite (positif) et soutirage à gauche (négatif). Dans l'éditeur visuel de la carte Jauge, sélectionne cette entité et règle les limites minimale et maximale selon la puissance de l'installation. Aucun capteur Template ni modification de `configuration.yaml` n'est nécessaire.
-
-## Informations techniques
-
-- Domaine : `arsun_energy`
-- Version : `0.2.1`
-- Plateforme : Home Assistant – Sensor
-- Configuration : UI (Config Flow)
-- Dépendances Python externes : aucune
-
-## Support et contributions
-
-Les retours, demandes d'évolution et rapports de bugs sont les bienvenus via les Issues GitHub du dépôt.
+Version actuelle : 0.3.0.

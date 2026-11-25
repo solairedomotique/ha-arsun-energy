@@ -1,27 +1,18 @@
 # Changelog
 
-## 0.2.1
-- Correction du signe du capteur « Puissance jauge » : injection positive, soutirage négatif.
-- La valeur ARSUN originale reste inchangée.
-- Les capteurs séparés et les compteurs d'énergie conservent leur convention et leur calcul précédents.
+## 0.3.0
+- Corrected the gauge sign: positive means export to EDF; negative means consumption from EDF.
+- Renamed grid energy sensors to clarify energy consumed from EDF and energy returned to EDF.
+- Added four restored cumulative energy counters for heater outputs 1 and 2: solar and EDF shares.
+- Heater split uses the global forced state: LED S1 is `H` OR LED S2 is `H`.
+- During forced mode, EDF import is allocated proportionally to the instantaneous wattage measured on outputs 1 and 2. Remaining heater power is attributed to solar.
+- When neither LED is `H`, measured heater output power is attributed to solar, as specified.
 
+## 0.2.1
+- Previous gauge sign correction release.
 
 ## 0.2.0
-- Le capteur « Puissance jauge » conserve désormais le signe ARSUN : négatif en injection et positif en soutirage.
-- Utilisation directe dans une carte Jauge à plage négative/positive (min/max configurables dans l’éditeur visuel).
-- Correction des URL de documentation et de suivi GitHub.
-- Documentation mise à jour pour HACS Marketplace.
-
+- Bidirectional signed gauge and default source selection.
 
 ## 0.1.3
-- Ajout de la valeur ARSUN originale, signe conservé.
-- Ajout d'un capteur séparé avec signe inversé pour les jauges.
-- Correction de la convention de signe : positif = soutirage, négatif = injection.
-- Séparation des puissances et compteurs d'énergie selon cette convention.
-- Métadonnées de l'appareil Solaire Domotique.
-
-## 0.1.2
-- Version de développement précédente.
-
-## 0.1.0
-- Première version de test de l'intégration.
+- Initial public release with original power, split grid power, and cumulative energy counters.
