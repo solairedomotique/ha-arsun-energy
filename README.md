@@ -21,11 +21,14 @@ Le capteur **Puissance jauge** conserve le signe ARSUN : positif = injection EDF
 ## Capteurs créés
 
 - Puissance réseau d'origine.
+- Puissance cumulus sortie 1 et puissance cumulus sortie 2 (W, mesures instantanées).
 - Puissance consommée EDF et puissance redonnée à EDF.
 - Énergie consommée EDF et énergie redonnée à EDF (compteurs cumulatifs).
 - Puissance jauge bidirectionnelle.
 - Cumulus sortie 1 solaire / réseau (kWh).
 - Cumulus sortie 2 solaire / réseau (kWh).
+
+Tous les compteurs d'énergie sont exprimés en kWh avec `device_class: energy` et `state_class: total_increasing`, pour être utilisables dans le tableau de bord Energy de Home Assistant.
 - Marche forcée canal 1 et marche forcée canal 2 (ON lorsque l’état LED correspondant vaut `H`).
 
 ## Répartition énergétique des cumulus
@@ -50,4 +53,4 @@ La mesure `injection_soutirage` représente le bilan réseau global de l'install
 
 ## Développement
 
-Version actuelle : 0.3.1.
+Version actuelle : 0.3.2.

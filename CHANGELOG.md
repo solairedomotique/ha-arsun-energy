@@ -1,3 +1,9 @@
+## 0.3.2
+- Added instantaneous power sensors for ARSUN outputs 1 and 2 (W).
+- Preserved all existing sensor names and entity unique IDs.
+- Kept cumulative energy sensors in kWh with `device_class: energy` and `state_class: total_increasing` for Home Assistant Energy compatibility.
+- Kept the forced-mode binary sensors and the existing heater energy allocation.
+
 ## 0.3.1
 - Added binary sensors for forced mode on ARSUN channels 1 and 2 (ON when the corresponding LED state is `H`).
 - Kept the existing energy and power sensors and the heater energy split calculation.
