@@ -26,6 +26,7 @@ Le capteur **Puissance jauge** conserve le signe ARSUN : positif = injection EDF
 - Puissance jauge bidirectionnelle.
 - Cumulus sortie 1 solaire / réseau (kWh).
 - Cumulus sortie 2 solaire / réseau (kWh).
+- Marche forcée canal 1 et marche forcée canal 2 (ON lorsque l’état LED correspondant vaut `H`).
 
 ## Répartition énergétique des cumulus
 
@@ -49,4 +50,4 @@ La mesure `injection_soutirage` représente le bilan réseau global de l'install
 
 ## Développement
 
-Version actuelle : 0.3.0.
+Version actuelle : 0.3.1.

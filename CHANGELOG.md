@@ -1,3 +1,7 @@
+## 0.3.1
+- Added binary sensors for forced mode on ARSUN channels 1 and 2 (ON when the corresponding LED state is `H`).
+- Kept the existing energy and power sensors and the heater energy split calculation.
+
 # Changelog
 
 ## 0.3.0
