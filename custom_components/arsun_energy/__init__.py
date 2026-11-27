@@ -1,26 +1,33 @@
-"""ARSUN Energy integration for Home Assistant."""
+"""ARSUN Energy integration."""
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, PLATFORMS
+from .const import (
+    CONF_LED_1, CONF_LED_2, CONF_OUTPUT_1, CONF_OUTPUT_2,
+    CONF_POWER_SENSOR, DOMAIN, PLATFORMS,
+)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Set up the integration from YAML (not used)."""
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up an ARSUN Energy config entry."""
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "power_sensor": entry.data["power_sensor"]
-    }
+    keys = (CONF_POWER_SENSOR, CONF_OUTPUT_1, CONF_OUTPUT_2, CONF_LED_1, CONF_LED_2)
+    # Keep absent keys absent: legacy entries from <= 0.3.3 must continue
+    # using the historical default entity IDs in sensor.py.
+    configured = {}
+    for key in keys:
+        if key in entry.options:
+            configured[key] = entry.options[key]
+        elif key in entry.data:
+            configured[key] = entry.data[key]
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = configured
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload an ARSUN Energy config entry."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
         hass.data[DOMAIN].pop(entry.entry_id, None)

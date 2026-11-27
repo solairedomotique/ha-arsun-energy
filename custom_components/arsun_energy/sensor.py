@@ -10,15 +10,32 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_POWER_SENSOR, DOMAIN
+from .const import CONF_LED_1, CONF_LED_2, CONF_OUTPUT_1, CONF_OUTPUT_2, CONF_POWER_SENSOR, DOMAIN
 
-# Additional ARSUN measurements used to split the two heater outputs.
-GRID_ENTITY = "sensor.arsun_routeur_injection_soutirage"
-OUTPUT_1_ENTITY = "sensor.arsun_routeur_sortie_1"
-OUTPUT_2_ENTITY = "sensor.arsun_routeur_sortie_2"
-LED_1_ENTITY = "sensor.arsun_routeur_etat_led_s1"
-LED_2_ENTITY = "sensor.arsun_routeur_etat_led_s2"
-DEPENDENCIES = [GRID_ENTITY, OUTPUT_1_ENTITY, OUTPUT_2_ENTITY, LED_1_ENTITY, LED_2_ENTITY]
+DEFAULT_ENTITIES = {
+    CONF_POWER_SENSOR: "sensor.arsun_routeur_injection_soutirage",
+    CONF_OUTPUT_1: "sensor.arsun_routeur_sortie_1",
+    CONF_OUTPUT_2: "sensor.arsun_routeur_sortie_2",
+    CONF_LED_1: "sensor.arsun_routeur_etat_led_s1",
+    CONF_LED_2: "sensor.arsun_routeur_etat_led_s2",
+}
+
+
+def _source(hass, entry_id, key):
+    configured = hass.data.get(DOMAIN, {}).get(entry_id, {})
+    if key in configured:
+        return configured[key]
+    return DEFAULT_ENTITIES[key]
+
+
+def _dependencies(hass, entry_id):
+    return [value for value in (
+        _source(hass, entry_id, CONF_POWER_SENSOR),
+        _source(hass, entry_id, CONF_OUTPUT_1),
+        _source(hass, entry_id, CONF_OUTPUT_2),
+        _source(hass, entry_id, CONF_LED_1),
+        _source(hass, entry_id, CONF_LED_2),
+    ) if value]
 
 
 def _number(hass, entity_id):
@@ -35,7 +52,7 @@ def _number(hass, entity_id):
     return value
 
 
-def _split_heater_power(hass):
+def _split_heater_power(hass, entry_id):
     """Return solar/grid W for outputs 1 and 2.
 
     ARSUN grid convention: negative = import from EDF, positive = export.
@@ -43,10 +60,14 @@ def _split_heater_power(hass):
     across the measured heater output powers. Otherwise all measured output
     power is classified as solar, as agreed for this integration.
     """
-    p1 = max(0.0, _number(hass, OUTPUT_1_ENTITY))
-    p2 = max(0.0, _number(hass, OUTPUT_2_ENTITY))
-    led1 = hass.states.get(LED_1_ENTITY)
-    led2 = hass.states.get(LED_2_ENTITY)
+    p1_entity = _source(hass, entry_id, CONF_OUTPUT_1)
+    p1 = max(0.0, _number(hass, p1_entity)) if p1_entity else 0.0
+    p2_entity = _source(hass, entry_id, CONF_OUTPUT_2)
+    p2 = max(0.0, _number(hass, p2_entity)) if p2_entity else 0.0
+    led1_entity = _source(hass, entry_id, CONF_LED_1)
+    led1 = hass.states.get(led1_entity) if led1_entity else None
+    led2_entity = _source(hass, entry_id, CONF_LED_2)
+    led2 = hass.states.get(led2_entity) if led2_entity else None
     forced = (
         (led1 is not None and led1.state.upper() in ("H", "P"))
         or (led2 is not None and led2.state.upper() in ("H", "P"))
@@ -54,7 +75,8 @@ def _split_heater_power(hass):
     if not forced:
         return {"s1_solar": p1, "s1_grid": 0.0, "s2_solar": p2, "s2_grid": 0.0}
 
-    grid_import = max(0.0, -_number(hass, GRID_ENTITY))
+    grid_entity = _source(hass, entry_id, CONF_POWER_SENSOR)
+    grid_import = max(0.0, -_number(hass, grid_entity)) if grid_entity else 0.0
     total = p1 + p2
     if total <= 0:
         return {"s1_solar": 0.0, "s1_grid": 0.0, "s2_solar": 0.0, "s2_grid": 0.0}
@@ -72,7 +94,11 @@ def _split_heater_power(hass):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
-    source = entry.options.get(CONF_POWER_SENSOR, entry.data[CONF_POWER_SENSOR])
+    source = _source(hass, entry.entry_id, CONF_POWER_SENSOR)
+    output1 = _source(hass, entry.entry_id, CONF_OUTPUT_1)
+    output2 = _source(hass, entry.entry_id, CONF_OUTPUT_2)
+    led1 = _source(hass, entry.entry_id, CONF_LED_1)
+    led2 = _source(hass, entry.entry_id, CONF_LED_2)
     device = DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
         name="Youtube : Solaire-domotique",
@@ -81,10 +107,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     )
     async_add_entities([
         ArsunOriginalPowerSensor(hass, entry, source, device),
-        ArsunOutputPowerSensor(hass, entry, OUTPUT_1_ENTITY, "1", device),
-        ArsunOutputPowerSensor(hass, entry, OUTPUT_2_ENTITY, "2", device),
-        ArsunOutputModeSensor(hass, entry, LED_1_ENTITY, "1", device),
-        ArsunOutputModeSensor(hass, entry, LED_2_ENTITY, "2", device),
+        ArsunOutputPowerSensor(hass, entry, output1, "1", device),
+        ArsunOutputPowerSensor(hass, entry, output2, "2", device),
+        ArsunOutputModeSensor(hass, entry, led1, "1", device),
+        ArsunOutputModeSensor(hass, entry, led2, "2", device),
         ArsunGridSplitPowerSensor(hass, entry, source, "consumption", device),
         ArsunGridSplitPowerSensor(hass, entry, source, "export", device),
         ArsunGaugePowerSensor(hass, entry, source, device),
@@ -112,7 +138,7 @@ class ArsunOriginalPowerSensor(SensorEntity):
 
     async def async_added_to_hass(self):
         self._update()
-        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed))
+        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed) if self.source else (lambda: None))
 
     @callback
     def _changed(self, event):
@@ -142,7 +168,7 @@ class ArsunOutputPowerSensor(SensorEntity):
     async def async_added_to_hass(self):
         self._update()
         self.async_on_remove(
-            async_track_state_change_event(self.hass, [self.source], self._changed)
+            async_track_state_change_event(self.hass, [self.source], self._changed) if self.source else (lambda: None)
         )
 
     @callback
@@ -151,7 +177,7 @@ class ArsunOutputPowerSensor(SensorEntity):
         self.async_write_ha_state()
 
     def _update(self):
-        self._attr_native_value = max(0.0, _number(self.hass, self.source))
+        self._attr_native_value = max(0.0, _number(self.hass, self.source)) if self.source else None
 
 
 class ArsunOutputModeSensor(SensorEntity):
@@ -179,7 +205,7 @@ class ArsunOutputModeSensor(SensorEntity):
     async def async_added_to_hass(self):
         self._update()
         self.async_on_remove(
-            async_track_state_change_event(self.hass, [self.source], self._changed)
+            async_track_state_change_event(self.hass, [self.source], self._changed) if self.source else (lambda: None)
         )
 
     @callback
@@ -188,7 +214,7 @@ class ArsunOutputModeSensor(SensorEntity):
         self.async_write_ha_state()
 
     def _update(self):
-        state = self.hass.states.get(self.source)
+        state = self.hass.states.get(self.source) if self.source else None
         if state is None:
             self._attr_native_value = None
             return
@@ -211,7 +237,7 @@ class ArsunGridSplitPowerSensor(SensorEntity):
 
     async def async_added_to_hass(self):
         self._update()
-        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed))
+        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed) if self.source else (lambda: None))
 
     @callback
     def _changed(self, event):
@@ -239,7 +265,7 @@ class ArsunGaugePowerSensor(SensorEntity):
 
     async def async_added_to_hass(self):
         self._update()
-        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed))
+        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed) if self.source else (lambda: None))
 
     @callback
     def _changed(self, event):
@@ -274,7 +300,7 @@ class ArsunGridEnergySensor(RestoreEntity, ArsunGridSplitPowerSensor):
         self._update()
         self._last_power = self._attr_native_value_power()
         self._last_time = dt_util.utcnow()
-        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed))
+        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed) if self.source else (lambda: None))
         self.async_write_ha_state()
 
     def _attr_native_value_power(self):
@@ -300,7 +326,7 @@ class ArsunHeaterEnergySensor(SensorEntity, RestoreEntity):
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
 
     def __init__(self, hass, entry, key, name, device):
-        self.hass, self.key = hass, key
+        self.hass, self.key, self.entry = hass, key, entry
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_heater_{key}_energy"
         self._attr_device_info = device
@@ -315,15 +341,15 @@ class ArsunHeaterEnergySensor(SensorEntity, RestoreEntity):
                 self._attr_native_value = max(0.0, float(last.state))
             except (TypeError, ValueError):
                 pass
-        self._last_power = _split_heater_power(self.hass)[self.key]
+        self._last_power = _split_heater_power(self.hass, self.entry.entry_id)[self.key]
         self._last_time = dt_util.utcnow()
-        self.async_on_remove(async_track_state_change_event(self.hass, DEPENDENCIES, self._changed))
+        self.async_on_remove(async_track_state_change_event(self.hass, _dependencies(self.hass, self.entry.entry_id), self._changed))
         self.async_write_ha_state()
 
     @callback
     def _changed(self, event):
         now = dt_util.utcnow()
-        new_power = _split_heater_power(self.hass)[self.key]
+        new_power = _split_heater_power(self.hass, self.entry.entry_id)[self.key]
         if self._last_power is not None and self._last_time is not None:
             elapsed = max(0.0, (now - self._last_time).total_seconds())
             self._attr_native_value += (self._last_power + new_power) * 0.5 * elapsed / 3_600_000

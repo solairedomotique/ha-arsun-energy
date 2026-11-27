@@ -1,3 +1,11 @@
+## 0.4.0
+- Ajout de la détection automatique des entités sources avec propositions modifiables.
+- Ajout d'une configuration entièrement manuelle des capteurs réseau, sorties cumulus et états LED.
+- Sortie 2 et LED canal 2 facultatives.
+- Adaptation des capteurs de puissance, des modes, des indicateurs de marche forcée et des compteurs aux entités sélectionnées.
+- Conservation de la logique de répartition énergétique existante et des états forcés H/P.
+- Correction de compatibilité pour les anciennes entrées de configuration : les entités historiques par défaut restent utilisées lorsque les nouveaux champs de configuration sont absents.
+
 ## 0.3.3
 - Treat ARSUN LED states `H` (Forcé H1H2) and `P` (Programme Horaire) as equivalent forced modes for the heater solar/grid allocation.
 - Keep the binary forced-mode indicators active for both `H` and `P`.

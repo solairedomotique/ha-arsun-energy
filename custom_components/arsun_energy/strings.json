@@ -1,20 +1,28 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "ARSUN Energy",
-        "description": "Sélectionnez le capteur de puissance instantanée fourni par votre routeur ARSUN.",
+      "detection": {
+        "title": "Configuration des sources ARSUN",
+        "description": "Choisis la méthode de recherche des entités. La détection automatique propose des correspondances que tu pourras vérifier et modifier.",
         "data": {
-          "power_sensor": "Capteur de puissance (W ou kW)"
+          "detection_mode": "Méthode de configuration"
+        }
+      },
+      "sources": {
+        "title": "Vérification des entités ARSUN",
+        "description": "Entités proposées et valeurs actuelles :\\n{preview}\\nVérifie les valeurs dans Outils de développement → États. Tu peux modifier chaque entité avant validation. La sortie 2 et son état LED sont facultatifs.",
+        "data": {
+          "power_sensor": "Puissance réseau (injection / soutirage)",
+          "output_1_sensor": "Puissance sortie 1",
+          "output_2_sensor": "Puissance sortie 2 (facultatif)",
+          "led_1_sensor": "État LED canal 1",
+          "led_2_sensor": "État LED canal 2 (facultatif)"
         }
       }
     },
     "error": {
-      "entity_not_found": "Le capteur sélectionné est introuvable.",
-      "invalid_unit": "Le capteur doit utiliser W ou kW."
-    },
-    "abort": {
-      "already_configured": "Ce capteur ARSUN est déjà configuré."
+      "entity_not_found": "Cette entité n'existe pas ou n'est pas disponible.",
+      "invalid_power_unit": "Cette entité doit être un capteur de puissance en W ou kW."
     }
   },
   "options": {

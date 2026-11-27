@@ -7,13 +7,12 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN
+from .const import CONF_LED_1, CONF_LED_2, DOMAIN
 
-CHANNELS = {
-    "1": "sensor.arsun_routeur_etat_led_s1",
-    "2": "sensor.arsun_routeur_etat_led_s2",
+DEFAULT_LEDS = {
+    CONF_LED_1: "sensor.arsun_routeur_etat_led_s1",
+    CONF_LED_2: "sensor.arsun_routeur_etat_led_s2",
 }
-
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     device = DeviceInfo(
@@ -22,9 +21,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         manufacturer="ARSUN / Youtube solaire-domotique",
         model="solaire-domotique.fr",
     )
+    configured = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
     async_add_entities([
-        ArsunForcedModeBinarySensor(hass, entry, channel, entity_id, device)
-        for channel, entity_id in CHANNELS.items()
+        ArsunForcedModeBinarySensor(
+            hass, entry, "1", configured.get(CONF_LED_1, DEFAULT_LEDS[CONF_LED_1]), device
+        ),
+        ArsunForcedModeBinarySensor(
+            hass, entry, "2", configured.get(CONF_LED_2, DEFAULT_LEDS[CONF_LED_2]), device
+        ),
     ])
 
 
@@ -44,9 +48,10 @@ class ArsunForcedModeBinarySensor(BinarySensorEntity):
 
     async def async_added_to_hass(self):
         self._update()
-        self.async_on_remove(
-            async_track_state_change_event(self.hass, [self.source], self._changed)
-        )
+        if self.source:
+            self.async_on_remove(
+                async_track_state_change_event(self.hass, [self.source], self._changed)
+            )
 
     @callback
     def _changed(self, event):
@@ -54,5 +59,5 @@ class ArsunForcedModeBinarySensor(BinarySensorEntity):
         self.async_write_ha_state()
 
     def _update(self):
-        state = self.hass.states.get(self.source)
+        state = self.hass.states.get(self.source) if self.source else None
         self._attr_is_on = state is not None and state.state.upper() in ("H", "P")
