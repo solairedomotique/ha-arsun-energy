@@ -53,44 +53,70 @@ def _number(hass, entity_id):
 
 
 def _split_heater_power(hass, entry_id):
-    """Return solar/grid W for outputs 1 and 2.
+    """Estimate solar/grid power for ARSUN heater outputs.
 
-    ARSUN grid convention: negative = import from EDF, positive = export.
-    If either LED reports H or P, grid import is allocated proportionally
-    across the measured heater output powers. Otherwise all measured output
-    power is classified as solar, as agreed for this integration.
+    H/P: forced mode. Allocate the measured global EDF import across forced
+    outputs in proportion to their measured power; any remaining heater power
+    is attributed to solar.
+    ON: surplus solar is feeding the heater (100% solar).
+    - / --- / OFF: output is stopped or not powered (0 W).
     """
-    p1_entity = _source(hass, entry_id, CONF_OUTPUT_1)
-    p1 = max(0.0, _number(hass, p1_entity)) if p1_entity else 0.0
-    p2_entity = _source(hass, entry_id, CONF_OUTPUT_2)
-    p2 = max(0.0, _number(hass, p2_entity)) if p2_entity else 0.0
-    led1_entity = _source(hass, entry_id, CONF_LED_1)
-    led1 = hass.states.get(led1_entity) if led1_entity else None
-    led2_entity = _source(hass, entry_id, CONF_LED_2)
-    led2 = hass.states.get(led2_entity) if led2_entity else None
-    forced = (
-        (led1 is not None and led1.state.upper() in ("H", "P"))
-        or (led2 is not None and led2.state.upper() in ("H", "P"))
-    )
-    if not forced:
-        return {"s1_solar": p1, "s1_grid": 0.0, "s2_solar": p2, "s2_grid": 0.0}
-
-    grid_entity = _source(hass, entry_id, CONF_POWER_SENSOR)
-    grid_import = max(0.0, -_number(hass, grid_entity)) if grid_entity else 0.0
-    total = p1 + p2
-    if total <= 0:
-        return {"s1_solar": 0.0, "s1_grid": 0.0, "s2_solar": 0.0, "s2_grid": 0.0}
-
-    # Do not allocate more EDF power to the heaters than their measured load.
-    allocated_grid = min(grid_import, total)
-    grid1 = allocated_grid * p1 / total
-    grid2 = allocated_grid * p2 / total
-    return {
-        "s1_solar": max(0.0, p1 - grid1),
-        "s1_grid": grid1,
-        "s2_solar": max(0.0, p2 - grid2),
-        "s2_grid": grid2,
+    led_entities = {
+        1: _source(hass, entry_id, CONF_LED_1),
+        2: _source(hass, entry_id, CONF_LED_2),
     }
+    output_entities = {
+        1: _source(hass, entry_id, CONF_OUTPUT_1),
+        2: _source(hass, entry_id, CONF_OUTPUT_2),
+    }
+
+    stopped_states = {"-", "---", "OFF"}
+    forced_states = {"H", "P"}
+    powers = {}
+    states = {}
+
+    for channel in (1, 2):
+        led_entity = led_entities[channel]
+        led_state = hass.states.get(led_entity) if led_entity else None
+        state = led_state.state.strip().upper() if led_state else None
+        states[channel] = state
+
+        output_entity = output_entities[channel]
+        measured_power = max(0.0, _number(hass, output_entity)) if output_entity else 0.0
+        powers[channel] = 0.0 if state in stopped_states else measured_power
+
+    # Only forced channels are eligible for the estimated EDF share.
+    # An ON channel remains 100% solar, even if the other channel is forced.
+    forced_channels = [
+        channel for channel in (1, 2) if states[channel] in forced_states
+    ]
+    forced_total = sum(powers[channel] for channel in forced_channels)
+
+    grid_import = 0.0
+    if forced_total > 0:
+        grid_entity = _source(hass, entry_id, CONF_POWER_SENSOR)
+        # ARSUN convention: negative = import from EDF, positive = export.
+        grid_import = max(0.0, -_number(hass, grid_entity)) if grid_entity else 0.0
+
+    # The EDF share cannot exceed the measured power of the forced heaters.
+    allocated_grid = min(grid_import, forced_total)
+
+    result = {
+        "s1_solar": 0.0,
+        "s1_grid": 0.0,
+        "s2_solar": 0.0,
+        "s2_grid": 0.0,
+    }
+    for channel in (1, 2):
+        power = powers[channel]
+        grid_share = 0.0
+        if channel in forced_channels and forced_total > 0:
+            grid_share = allocated_grid * power / forced_total
+
+        result[f"s{channel}_grid"] = grid_share
+        result[f"s{channel}_solar"] = max(0.0, power - grid_share)
+
+    return result
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
@@ -107,6 +133,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     )
     async_add_entities([
         ArsunOriginalPowerSensor(hass, entry, source, device),
+        ArsunBatteryPowerSensor(hass, entry, "sensor.arsun_routeur_batterie", device),
         ArsunOutputPowerSensor(hass, entry, output1, "1", device),
         ArsunOutputPowerSensor(hass, entry, output2, "2", device),
         ArsunOutputModeSensor(hass, entry, led1, "1", device),
@@ -149,6 +176,40 @@ class ArsunOriginalPowerSensor(SensorEntity):
         self._attr_native_value = _number(self.hass, self.source)
 
 
+class ArsunBatteryPowerSensor(SensorEntity):
+    """Read-only display of the ARSUN battery instantaneous power."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Puissance batterie"
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:battery-sync"
+
+    def __init__(self, hass, entry, source, device):
+        self.hass = hass
+        self.source = source
+        self._attr_device_info = device
+        self._attr_unique_id = f"{entry.entry_id}_battery_power"
+        self._attr_native_value = None
+
+    async def async_added_to_hass(self):
+        self._update()
+        self.async_on_remove(
+            async_track_state_change_event(self.hass, [self.source], self._changed)
+            if self.source else (lambda: None)
+        )
+
+    @callback
+    def _changed(self, event):
+        self._update()
+        self.async_write_ha_state()
+
+    def _update(self):
+        state = self.hass.states.get(self.source) if self.source else None
+        self._attr_native_value = _number(self.hass, self.source) if state is not None else None
+
+
 class ArsunOutputPowerSensor(SensorEntity):
     """Instantaneous power measured on one ARSUN output."""
 
@@ -189,9 +250,10 @@ class ArsunOutputModeSensor(SensorEntity):
     STATE_LABELS = {
         "H": "Forcé H1H2",
         "P": "Programme Horaire",
-        "---": "Automatique en attente de surplus",
+        "---": "Arrêt / attente de surplus",
         "ON": "Surplus alimentant le chauffe-eau",
         "OFF": "Sortie non alimentée",
+        "-": "Arrêt du chauffe-eau",
     }
 
     def __init__(self, hass, entry, source, channel, device):

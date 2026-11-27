@@ -1,16 +1,17 @@
 # ARSUN Energy
 
-Intégration personnalisée **Home Assistant** pour le routeur ARSUN, développée par **Solaire Domotique**.
+Intégration personnalisée **Home Assistant** pour le routeur ARSUN, créée dans le cadre d'un partenariat entre la chaîne YouTube [Solaire Domotique](https://www.youtube.com/@solairedomotique), le concepteur [ARSUN](https://arsun-concept.com/) et la société [SOSUNELEC](https://sosunelec.com/).
 
 - Dépôt : https://github.com/solairedomotique/ha-arsun-energy
 - Installation : Home Assistant Marketplace (HACS)
-- Version : **0.4.0**
+- Version : **0.4.1**
 
 ## Fonctionnalités
 
 - Suivi de la puissance réseau ARSUN avec conservation du signe d'origine.
 - Séparation de la puissance importée depuis EDF et de la puissance injectée vers EDF.
 - Mesure instantanée des sorties cumulus 1 et 2.
+- Affichage de la puissance instantanée de la batterie ARSUN (lecture seule, sans traitement énergétique).
 - États de fonctionnement lisibles des canaux ARSUN.
 - Détection des modes forcés `H` et `P`.
 - Estimation de la part solaire et de la part réseau des cumulus.
@@ -39,9 +40,9 @@ Les sources configurables sont :
 |---|---:|---|
 | Puissance réseau injection/soutirage | Oui | W ou kW, négatif = import EDF, positif = injection |
 | Puissance sortie 1 | Oui | W ou kW |
-| État LED canal 1 | Oui | `H`, `P`, `---`, `ON` ou `OFF` |
+| État LED canal 1 | Oui | `H`, `P`, `---`, `ON`, `-` ou `OFF` |
 | Puissance sortie 2 | Non | W ou kW |
-| État LED canal 2 | Non | `H`, `P`, `---`, `ON` ou `OFF` |
+| État LED canal 2 | Non | `H`, `P`, `---`, `ON`, `-` ou `OFF` |
 
 Les noms et préfixes des entités peuvent varier d'une installation à l'autre. C'est pour cela que la version 0.4.0 permet de choisir les entités sources au lieu de dépendre d'un préfixe fixe.
 
@@ -56,28 +57,38 @@ Le capteur « Puissance jauge » conserve également ce signe : positif = inject
 
 ## États des canaux ARSUN
 
-| État ARSUN | Libellé affiché | Traitement |
+| État ARSUN | Libellé affiché | Traitement énergétique |
 |---|---|---|
-| `H` | Forcé H1H2 | Mode forcé |
-| `P` | Programme Horaire | Mode forcé |
-| `---` | Automatique en attente de surplus | Mode automatique |
-| `ON` | Surplus alimentant le chauffe-eau | Mode automatique |
-| `OFF` | Sortie non alimentée | Mode automatique |
+| `H` | Forcé H1H2 | Répartition estimative entre solaire et EDF |
+| `P` | Programme Horaire | Même calcul que H |
+| `ON` | Surplus alimentant le chauffe-eau | 100 % solaire |
+| `-` | Arrêt du chauffe-eau | 0 W comptabilisé |
+| `---` | Arrêt / attente de surplus | Même traitement que `-` : 0 W |
+| `OFF` | Sortie non alimentée | 0 W comptabilisé |
 
-Les états `H` et `P` activent tous les deux les indicateurs binaires « Marche forcée » et la logique de répartition estimative entre solaire et réseau.
+Les états `H` et `P` activent tous les deux les indicateurs binaires « Marche forcée ». Les états `-`, `---` et `OFF` sont considérés comme un arrêt de la sortie. Un canal en `ON` est considéré comme alimenté à 100 % par le surplus solaire.
 
 ## Répartition énergétique des cumulus
 
-En fonctionnement automatique (aucun canal en `H` ou `P`), la puissance mesurée sur les sorties est comptabilisée comme solaire, conformément à la convention retenue pour cette intégration.
-
-Dès qu'au moins un canal est en mode `H` ou `P` :
+Lorsque les deux canaux sont en fonctionnement forcé (`H` ou `P`), la puissance mesurée sur les sorties forcées est comparée à la puissance importée depuis EDF.
 
 1. L'import EDF est calculé à partir de la valeur négative du capteur réseau.
-2. Cet import est plafonné à la puissance totale mesurée sur les sorties cumulus.
-3. La part réseau est répartie proportionnellement entre les sorties selon leurs puissances instantanées.
-4. Le complément de chaque sortie est comptabilisé comme solaire.
+2. La part EDF attribuée aux cumulus est plafonnée à la puissance totale mesurée des sorties en `H` ou `P`.
+3. Cette part EDF est répartie proportionnellement à la puissance mesurée de chaque sortie forcée.
+4. Pour chaque sortie forcée, la différence entre sa puissance mesurée et sa part EDF est comptabilisée comme solaire.
+5. Les sorties en `ON` restent 100 % solaires ; les sorties en `-`, `---` ou `OFF` sont comptabilisées à 0 W.
 
-Exemple : sortie 1 à 1 500 W, sortie 2 à 1 000 W et import EDF mesuré à 800 W : 480 W sont attribués au réseau pour la sortie 1 et 320 W pour la sortie 2. Le reste est attribué au solaire.
+Exemple avec deux sorties forcées :
+- Sortie 1 : 1 000 W
+- Sortie 2 : 500 W
+- Puissance totale des cumulus : 1 500 W
+- Import EDF : 600 W
+
+Répartition :
+- Sortie 1 : 400 W réseau et 600 W solaire.
+- Sortie 2 : 200 W réseau et 300 W solaire.
+
+Les quatre compteurs correspondants sont incrémentés en kWh : sortie 1 solaire, sortie 1 réseau, sortie 2 solaire et sortie 2 réseau. Si l'import EDF dépasse la puissance totale des sorties forcées, toute leur puissance est attribuée au réseau et leur part solaire est nulle.
 
 ### Limite de précision
 
@@ -88,6 +99,7 @@ Le capteur injection/soutirage mesure le bilan réseau global de l'installation,
 L'intégration expose notamment :
 
 - Puissance réseau d'origine (W).
+- Puissance batterie (W), affichage simple du capteur `sensor.arsun_routeur_batterie`.
 - Puissance consommée EDF et puissance redonnée à EDF (W).
 - Puissance jauge bidirectionnelle (W).
 - Puissance cumulus sortie 1 et sortie 2 (W).

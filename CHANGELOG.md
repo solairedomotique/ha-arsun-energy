@@ -1,3 +1,16 @@
+## 0.4.2
+- Traite les états LED `-` et `---` de manière identique : sortie arrêtée, 0 W comptabilisé.
+- Traite également `OFF` comme une sortie non alimentée (0 W).
+- En mode forcé `H` ou `P`, plafonne l'import EDF à la puissance totale des sorties forcées.
+- Répartit la part EDF proportionnellement entre les sorties forcées ; le complément de chaque sortie forcée est comptabilisé comme solaire.
+- Conserve `ON` à 100 % solaire et incrémente séparément les quatre compteurs énergétiques sortie 1/2 solaire/réseau.
+
+## 0.4.1
+- Ajout du capteur de puissance batterie ARSUN `sensor.arsun_routeur_batterie` en W, en affichage simple uniquement.
+- Ajustement du calcul énergétique par canal : `H` et `P` sont forcés et partagent l'estimation EDF, `ON` est 100 % solaire, `-` signifie que le chauffe-eau est à l'arrêt (0 W).
+- La répartition EDF est désormais limitée aux canaux réellement en `H` ou `P`, sans attribuer de réseau à un canal en `ON`.
+- Ajout dans le README de la présentation du partenariat entre Solaire Domotique, ARSUN et SOSUNELEC avec liens directs.
+
 ## 0.4.0
 - Ajout de la détection automatique des entités sources avec propositions modifiables.
 - Ajout d'une configuration entièrement manuelle des capteurs réseau, sorties cumulus et états LED.
