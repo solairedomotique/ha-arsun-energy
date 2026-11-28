@@ -1,3 +1,6 @@
+## 2.3.1\n- Correction du démarrage : ajout de `async_reload_entry`, appelée lors de l'enregistrement du listener de mise à jour des options.\n- Le lien « Visiter » et les fonctionnalités existantes sont conservés.\n\n## 2.3
+- Mise à jour du numéro de version affiché dans les informations de l'appareil Home Assistant.
+
 ## 0.4.6
 - Modification du seul lien « Visiter » de la fiche appareil : https://solaire-domotique.fr/ha/github/arsun/.
 
