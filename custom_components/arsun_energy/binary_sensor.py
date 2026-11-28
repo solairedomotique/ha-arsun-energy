@@ -17,9 +17,11 @@ DEFAULT_LEDS = {
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     device = DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Youtube : Solaire-domotique",
-        manufacturer="ARSUN / Youtube solaire-domotique",
-        model="solaire-domotique.fr",
+        name="ARSUN Energy",
+        manufacturer="ARSUN × SOSUNELEC",
+        model="Partenariat avec Solaire Domotique — site et chaîne YouTube",
+        configuration_url="https://solaire-domotique.fr",
+        sw_version="0.4.4",
     )
     configured = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
     async_add_entities([

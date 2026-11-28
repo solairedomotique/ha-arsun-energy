@@ -1,22 +1,65 @@
 # ARSUN Energy
 
-Intégration personnalisée **Home Assistant** pour le routeur ARSUN, créée dans le cadre d'un partenariat entre la chaîne YouTube [Solaire Domotique](https://www.youtube.com/@solairedomotique), le concepteur [ARSUN](https://arsun-concept.com/) et la société [SOSUNELEC](https://sosunelec.com/).
+Intégration personnalisée **Home Assistant** pour le routeur ARSUN.
+
+## 🤝 Les partenaires du projet
+
+ARSUN Energy est développé dans le cadre d'un partenariat réunissant **Solaire Domotique**, le concepteur du routeur **ARSUN** et la société **SOSUNELEC**.
+
+Les logos ci-dessous sont chargés directement depuis le site Solaire Domotique. Ils sont affichés dans des emplacements à hauteur limitée : si un logo est remplacé sur le FTP en conservant la même URL, le README utilisera automatiquement la nouvelle image sans modification du dépôt.
+
+<table>
+  <tr>
+    <td align="center" valign="middle">
+      <a href="https://arsun-concept.com/">
+        <img src="https://solaire-domotique.fr/ha/github/logo/arsun.png" alt="ARSUN" height="80" />
+      </a>
+      <br />
+      <strong>ARSUN</strong>
+      <br />
+      <sub>Concepteur du routeur</sub>
+    </td>
+    <td align="center" valign="middle">
+      <a href="https://sosunelec.com/">
+        <img src="https://solaire-domotique.fr/ha/github/logo/logo-sosunelec.png" alt="SOSUNELEC" height="80" />
+      </a>
+      <br />
+      <strong>SOSUNELEC</strong>
+      <br />
+      <sub>Partenaire du projet</sub>
+    </td>
+    <td align="center" valign="middle">
+      <a href="https://solaire-domotique.fr/">
+        <img src="https://solaire-domotique.fr/ha/github/logo/solaire-domotique.png" alt="Solaire Domotique" height="80" />
+      </a>
+      <br />
+      <strong>Solaire Domotique</strong>
+      <br />
+      <sub>Site web et développement de l'intégration</sub>
+      <br />
+      <a href="https://www.youtube.com/@solairedomotique">Chaîne YouTube</a>
+    </td>
+  </tr>
+</table>
+
+Ce partenariat associe la conception du routeur ARSUN, l'expertise de SOSUNELEC et le développement ainsi que le partage communautaire assurés par Solaire Domotique.
+
 
 - Dépôt : https://github.com/solairedomotique/ha-arsun-energy
 - Installation : Home Assistant Marketplace (HACS)
-- Version : **0.4.1**
+- Version : **0.4.5**
 
 ## Fonctionnalités
 
 - Suivi de la puissance réseau ARSUN avec conservation du signe d'origine.
 - Séparation de la puissance importée depuis EDF et de la puissance injectée vers EDF.
 - Mesure instantanée des sorties cumulus 1 et 2.
-- Affichage de la puissance instantanée de la batterie ARSUN (lecture seule, sans traitement énergétique).
+- Affichage de la puissance instantanée de la batterie ARSUN (lecture seule, sans traitement énergétique), avec source configurable.
 - États de fonctionnement lisibles des canaux ARSUN.
 - Détection des modes forcés `H` et `P`.
 - Estimation de la part solaire et de la part réseau des cumulus.
 - Compteurs d'énergie cumulatifs restaurés après redémarrage et compatibles avec le tableau de bord Énergie de Home Assistant.
-- Détection automatique des entités avec propositions modifiables, ou configuration entièrement manuelle.
+- Détection automatique améliorée : analyse des noms, friendly_name, unités et device_class, avec propositions modifiables et configuration manuelle.
 - Sortie 2 et LED 2 facultatives.
 
 ## Installation via Home Assistant Marketplace
@@ -30,7 +73,7 @@ Intégration personnalisée **Home Assistant** pour le routeur ARSUN, créée da
 7. Choisir la détection automatique ou la configuration manuelle.
 8. Vérifier les entités proposées et leurs valeurs avant de valider.
 
-La détection automatique s'appuie sur les identifiants et noms conviviaux des entités. Elle propose des correspondances : elle ne peut pas garantir seule qu'une entité est la bonne. Vérifier les valeurs avant validation. Si nécessaire, sélectionner manuellement les capteurs exacts.
+La détection automatique classe les capteurs en analysant l'Entity ID, le nom convivial (`friendly_name`), l'unité et la classe d'appareil (`device_class`). Pour les puissances, elle privilégie les capteurs en W/kW et de classe `power`. Pour les LED, elle privilégie les noms propres à chaque canal. Une valeur LED inconnue (par exemple `N`) n'est ni interprétée ni rejetée : la correspondance est proposée sur la base du nom, et l'état reste visible pour vérification. Vérifier les valeurs avant validation. Si nécessaire, sélectionner manuellement les capteurs exacts.
 
 ## Configuration des sources
 
@@ -42,7 +85,8 @@ Les sources configurables sont :
 | Puissance sortie 1 | Oui | W ou kW |
 | État LED canal 1 | Oui | `H`, `P`, `---`, `ON`, `-` ou `OFF` |
 | Puissance sortie 2 | Non | W ou kW |
-| État LED canal 2 | Non | `H`, `P`, `---`, `ON`, `-` ou `OFF` |
+| État LED canal 2 | Non | États LED affichés sans interpréter les valeurs inconnues |
+| Puissance batterie | Non | W ou kW |
 
 Les noms et préfixes des entités peuvent varier d'une installation à l'autre. C'est pour cela que la version 0.4.0 permet de choisir les entités sources au lieu de dépendre d'un préfixe fixe.
 

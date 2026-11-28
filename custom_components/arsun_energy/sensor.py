@@ -10,7 +10,7 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_LED_1, CONF_LED_2, CONF_OUTPUT_1, CONF_OUTPUT_2, CONF_POWER_SENSOR, DOMAIN
+from .const import CONF_BATTERY_SENSOR, CONF_LED_1, CONF_LED_2, CONF_OUTPUT_1, CONF_OUTPUT_2, CONF_POWER_SENSOR, DOMAIN
 
 DEFAULT_ENTITIES = {
     CONF_POWER_SENSOR: "sensor.arsun_routeur_injection_soutirage",
@@ -127,13 +127,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     led2 = _source(hass, entry.entry_id, CONF_LED_2)
     device = DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Youtube : Solaire-domotique",
-        manufacturer="ARSUN / Youtube solaire-domotique",
-        model="solaire-domotique.fr",
+        name="ARSUN Energy",
+        manufacturer="ARSUN × SOSUNELEC",
+        model="Partenariat avec Solaire Domotique — site et chaîne YouTube",
+        configuration_url="https://solaire-domotique.fr",
+        sw_version="0.4.4",
     )
     async_add_entities([
         ArsunOriginalPowerSensor(hass, entry, source, device),
-        ArsunBatteryPowerSensor(hass, entry, "sensor.arsun_routeur_batterie", device),
+        ArsunBatteryPowerSensor(hass, entry, _source(hass, entry.entry_id, CONF_BATTERY_SENSOR), device),
         ArsunOutputPowerSensor(hass, entry, output1, "1", device),
         ArsunOutputPowerSensor(hass, entry, output2, "2", device),
         ArsunOutputModeSensor(hass, entry, led1, "1", device),

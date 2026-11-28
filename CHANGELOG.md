@@ -1,3 +1,20 @@
+## 0.4.5
+- Présentation graphique des trois partenaires dans le README avec leurs logos hébergés sur solaire-domotique.fr.
+- Logos cliquables vers les sites officiels ; le logo Solaire Domotique donne également accès à la chaîne YouTube.
+- Images chargées par URL avec une hauteur d'affichage limitée afin de pouvoir remplacer les fichiers sur le FTP sans modifier le dépôt.
+
+## 0.4.4
+- Mise en valeur du partenariat dans le README avec liens directs vers le site Solaire Domotique, sa chaîne YouTube, ARSUN et SOSUNELEC.
+- Enrichissement des informations de l'appareil Home Assistant : nom ARSUN Energy, fabricants/partenaires, modèle descriptif, version logicielle et lien vers le site Solaire Domotique.
+
+## 0.4.3
+- Amélioration de la détection automatique par analyse combinée de l'Entity ID, du friendly_name, de l'unité et du device_class.
+- Priorité aux capteurs de puissance en W/kW et de classe `power`.
+- Recherche des sorties et des LED par nom de canal, sans dépendance au préfixe de l'installation.
+- Les états LED inconnus (dont `N`) ne sont pas interprétés et ne bloquent pas la détection basée sur le nom.
+- Ajout de la puissance batterie comme source facultative configurable ; affichage simple en W, sans traitement énergétique.
+- Ajout des informations de classe, unité et score dans l'aperçu des correspondances.
+
 ## 0.4.2
 - Traite les états LED `-` et `---` de manière identique : sortie arrêtée, 0 W comptabilisé.
 - Traite également `OFF` comme une sortie non alimentée (0 W).

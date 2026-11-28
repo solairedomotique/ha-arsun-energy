@@ -1,7 +1,7 @@
 {
   "domain": "arsun_energy",
   "name": "ARSUN Energy",
-  "version": "0.4.2",
+  "version": "0.4.5",
   "documentation": "https://github.com/solairedomotique/ha-arsun-energy",
   "issue_tracker": "https://github.com/solairedomotique/ha-arsun-energy/issues",
   "codeowners": [

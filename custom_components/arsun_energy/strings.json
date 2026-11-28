@@ -10,13 +10,14 @@
       },
       "sources": {
         "title": "Vérification des entités ARSUN",
-        "description": "Entités proposées et valeurs actuelles :\\n{preview}\\nVérifie les valeurs dans Outils de développement → États. Tu peux modifier chaque entité avant validation. La sortie 2 et son état LED sont facultatifs.",
+        "description": "Entités proposées et valeurs actuelles :\\n{preview}\\nVérifie les unités et les valeurs. Les puissances doivent être en W ou kW. Les états LED sont reconnus par leur nom de canal ; une valeur inconnue est affichée mais n'est pas interprétée. Tu peux modifier chaque entité avant validation. Sortie 2, LED 2 et batterie sont facultatives.",
         "data": {
           "power_sensor": "Puissance réseau (injection / soutirage)",
           "output_1_sensor": "Puissance sortie 1",
           "output_2_sensor": "Puissance sortie 2 (facultatif)",
           "led_1_sensor": "État LED canal 1",
-          "led_2_sensor": "État LED canal 2 (facultatif)"
+          "led_2_sensor": "État LED canal 2 (facultatif)",
+          "battery_sensor": "Puissance batterie (facultatif)"
         }
       }
     },
@@ -30,7 +31,12 @@
       "init": {
         "title": "Source ARSUN",
         "data": {
-          "power_sensor": "Capteur de puissance"
+          "power_sensor": "Puissance réseau (injection / soutirage)",
+          "output_1_sensor": "Puissance sortie 1",
+          "output_2_sensor": "Puissance sortie 2 (facultatif)",
+          "led_1_sensor": "État LED canal 1",
+          "led_2_sensor": "État LED canal 2 (facultatif)",
+          "battery_sensor": "Puissance batterie (facultatif)"
         }
       }
     }
