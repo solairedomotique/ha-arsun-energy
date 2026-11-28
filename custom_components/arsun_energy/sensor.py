@@ -21,6 +21,7 @@ DEFAULT_ENTITIES = {
     CONF_OUTPUT_2: "sensor.arsun_routeur_sortie_2",
     CONF_LED_1: "sensor.arsun_routeur_etat_led_s1",
     CONF_LED_2: "sensor.arsun_routeur_etat_led_s2",
+    CONF_BATTERY_SENSOR: "sensor.arsun_routeur_batterie",
 }
 
 

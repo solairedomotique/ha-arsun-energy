@@ -9,3 +9,7 @@
 
 ## Important
 Le stockage persistant est conservé dans le dossier `.storage` de Home Assistant. Ne pas supprimer les fichiers de stockage ARSUN ni restaurer un backup antérieur si l'objectif est de conserver les compteurs.
+
+## Correctif complémentaire
+- Ajout de l'entité batterie ARSUN dans les entités par défaut. Cela évite une erreur `KeyError` au démarrage lors de la mise à jour d'anciennes configurations qui ne contiennent pas encore la clé `battery_sensor`.
+- Version du micrologiciel affichée dans Home Assistant harmonisée sur `2.4`.

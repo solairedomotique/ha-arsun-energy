@@ -1,3 +1,7 @@
+## 2.4 (correctif)
+- Ajout du capteur batterie dans la table des entités par défaut pour assurer la compatibilité des anciennes configurations.
+- Harmonisation de la version affichée dans les informations de l'appareil sur 2.4.
+
 ## 2.4
 - Correction de la restauration des compteurs énergétiques EDF et cumulus : la valeur restaurée n'est plus écrasée par une puissance instantanée en W.
 - Ajout d'une sauvegarde persistante Home Assistant indépendante de l'ID temporaire de l'entrée, afin de conserver les totaux lors d'une réinstallation avec les mêmes entités sources.
