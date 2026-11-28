@@ -148,7 +148,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         manufacturer="ARSUN × SOSUNELEC",
         model="Partenariat avec Solaire Domotique — site et chaîne YouTube",
         configuration_url="https://solaire-domotique.fr/ha/github/arsun/",
-        sw_version="2.4",
+        sw_version="2.5.0",
     )
     async_add_entities([
         ArsunOriginalPowerSensor(hass, entry, source, device),

@@ -1,3 +1,8 @@
+## 2.5.0
+- Mise à jour du numéro de version de l’intégration dans `manifest.json`.
+- Harmonisation de la version logicielle affichée dans Home Assistant (`sw_version`) sur `2.5.0`.
+- Aucun changement fonctionnel par rapport à la version 2.4.
+
 ## 2.4 (correctif)
 - Ajout du capteur batterie dans la table des entités par défaut pour assurer la compatibilité des anciennes configurations.
 - Harmonisation de la version affichée dans les informations de l'appareil sur 2.4.
