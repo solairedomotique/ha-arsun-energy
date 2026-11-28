@@ -47,7 +47,7 @@ Ce partenariat associe la conception du routeur ARSUN, l'expertise de SOSUNELEC 
 
 - Dépôt : https://github.com/solairedomotique/ha-arsun-energy
 - Installation : Home Assistant Marketplace (HACS)
-- Version : **2.3.1**
+- Version : **2.4**
 
 ## Fonctionnalités
 

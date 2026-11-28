@@ -1,3 +1,8 @@
+## 2.4
+- Correction de la restauration des compteurs énergétiques EDF et cumulus : la valeur restaurée n'est plus écrasée par une puissance instantanée en W.
+- Ajout d'une sauvegarde persistante Home Assistant indépendante de l'ID temporaire de l'entrée, afin de conserver les totaux lors d'une réinstallation avec les mêmes entités sources.
+- Sauvegarde périodique différée et sauvegarde immédiate au retrait des entités.
+
 ## 2.3.1\n- Correction du démarrage : ajout de `async_reload_entry`, appelée lors de l'enregistrement du listener de mise à jour des options.\n- Le lien « Visiter » et les fonctionnalités existantes sont conservés.\n\n## 2.3
 - Mise à jour du numéro de version affiché dans les informations de l'appareil Home Assistant.
 

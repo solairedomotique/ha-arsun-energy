@@ -7,6 +7,9 @@ from homeassistant.const import UnitOfPower, UnitOfEnergy
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers.storage import Store
+import hashlib
+import json
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import dt as dt_util
 
@@ -26,6 +29,19 @@ def _source(hass, entry_id, key):
     if key in configured:
         return configured[key]
     return DEFAULT_ENTITIES[key]
+
+
+def _persistent_store(hass, entry_id, metric, source_entities):
+    """Create a storage key that survives config-entry removal/recreation.
+
+    The key is based on the configured source entity IDs and metric, not on
+    the random config-entry ID generated during installation.
+    """
+    sources = sorted(entity_id for entity_id in source_entities if entity_id)
+    fingerprint = hashlib.sha256(
+        json.dumps(sources, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()[:16]
+    return Store(hass, 1, f"{DOMAIN}_{fingerprint}_{metric}")
 
 
 def _dependencies(hass, entry_id):
@@ -131,7 +147,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         manufacturer="ARSUN × SOSUNELEC",
         model="Partenariat avec Solaire Domotique — site et chaîne YouTube",
         configuration_url="https://solaire-domotique.fr/ha/github/arsun/",
-        sw_version="2.3.1",
+        sw_version="2.4",
     )
     async_add_entities([
         ArsunOriginalPowerSensor(hass, entry, source, device),
@@ -342,6 +358,8 @@ class ArsunGaugePowerSensor(SensorEntity):
 
 
 class ArsunGridEnergySensor(RestoreEntity, ArsunGridSplitPowerSensor):
+    """Persistent cumulative EDF energy counter."""
+
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
     _attr_device_class = SensorDeviceClass.ENERGY
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -353,23 +371,49 @@ class ArsunGridEnergySensor(RestoreEntity, ArsunGridSplitPowerSensor):
         self._attr_native_value = 0.0
         self._last_power = None
         self._last_time = None
+        self._store = _persistent_store(
+            hass, entry.entry_id, f"grid_{direction}", [source]
+        )
 
     async def async_added_to_hass(self):
-        last = await self.async_get_last_state()
-        if last:
+        await super().async_added_to_hass()
+        stored = await self._store.async_load()
+        restored = False
+        if isinstance(stored, dict) and stored.get("value") is not None:
             try:
-                self._attr_native_value = max(0.0, float(last.state))
+                self._attr_native_value = max(0.0, float(stored["value"]))
+                restored = True
             except (TypeError, ValueError):
                 pass
-        self._update()
+
+        # Fallback to Home Assistant's entity restore if this is an older install
+        # that predates the persistent integration storage.
+        if not restored:
+            last = await self.async_get_last_state()
+            if last is not None:
+                try:
+                    self._attr_native_value = max(0.0, float(last.state))
+                except (TypeError, ValueError):
+                    pass
+
+        # IMPORTANT: do not call the inherited _update() here. It updates
+        # instantaneous power (W), not cumulative energy (kWh).
         self._last_power = self._attr_native_value_power()
         self._last_time = dt_util.utcnow()
-        self.async_on_remove(async_track_state_change_event(self.hass, [self.source], self._changed) if self.source else (lambda: None))
+        self.async_on_remove(
+            async_track_state_change_event(self.hass, [self.source], self._changed)
+            if self.source else (lambda: None)
+        )
         self.async_write_ha_state()
 
     def _attr_native_value_power(self):
         value = _number(self.hass, self.source)
         return max(0.0, -value) if self.direction == "consumption" else max(0.0, value)
+
+    def _save_value(self):
+        self._store.async_delay_save(
+            lambda: {"value": float(self._attr_native_value or 0.0)}, 5
+        )
 
     @callback
     def _changed(self, event):
@@ -379,11 +423,19 @@ class ArsunGridEnergySensor(RestoreEntity, ArsunGridSplitPowerSensor):
             elapsed = max(0.0, (now - self._last_time).total_seconds())
             self._attr_native_value += (self._last_power + new) * 0.5 * elapsed / 3_600_000
         self._last_power, self._last_time = new, now
+        self._save_value()
         self.async_write_ha_state()
+
+    async def async_will_remove_from_hass(self):
+        await self._store.async_save(
+            {"value": float(self._attr_native_value or 0.0)}
+        )
+        await super().async_will_remove_from_hass()
 
 
 class ArsunHeaterEnergySensor(SensorEntity, RestoreEntity):
-    """Restored cumulative kWh from one calculated heater solar/grid share."""
+    """Persistent cumulative kWh from one calculated heater solar/grid share."""
+
     _attr_has_entity_name = True
     _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
     _attr_device_class = SensorDeviceClass.ENERGY
@@ -397,18 +449,43 @@ class ArsunHeaterEnergySensor(SensorEntity, RestoreEntity):
         self._attr_native_value = 0.0
         self._last_power = None
         self._last_time = None
+        self._store = _persistent_store(
+            hass, entry.entry_id, f"heater_{key}",
+            _dependencies(hass, entry.entry_id)
+        )
 
     async def async_added_to_hass(self):
-        last = await self.async_get_last_state()
-        if last:
+        await super().async_added_to_hass()
+        stored = await self._store.async_load()
+        restored = False
+        if isinstance(stored, dict) and stored.get("value") is not None:
             try:
-                self._attr_native_value = max(0.0, float(last.state))
+                self._attr_native_value = max(0.0, float(stored["value"]))
+                restored = True
             except (TypeError, ValueError):
                 pass
+
+        if not restored:
+            last = await self.async_get_last_state()
+            if last is not None:
+                try:
+                    self._attr_native_value = max(0.0, float(last.state))
+                except (TypeError, ValueError):
+                    pass
+
         self._last_power = _split_heater_power(self.hass, self.entry.entry_id)[self.key]
         self._last_time = dt_util.utcnow()
-        self.async_on_remove(async_track_state_change_event(self.hass, _dependencies(self.hass, self.entry.entry_id), self._changed))
+        dependencies = _dependencies(self.hass, self.entry.entry_id)
+        if dependencies:
+            self.async_on_remove(
+                async_track_state_change_event(self.hass, dependencies, self._changed)
+            )
         self.async_write_ha_state()
+
+    def _save_value(self):
+        self._store.async_delay_save(
+            lambda: {"value": float(self._attr_native_value or 0.0)}, 5
+        )
 
     @callback
     def _changed(self, event):
@@ -418,4 +495,11 @@ class ArsunHeaterEnergySensor(SensorEntity, RestoreEntity):
             elapsed = max(0.0, (now - self._last_time).total_seconds())
             self._attr_native_value += (self._last_power + new_power) * 0.5 * elapsed / 3_600_000
         self._last_power, self._last_time = new_power, now
+        self._save_value()
         self.async_write_ha_state()
+
+    async def async_will_remove_from_hass(self):
+        await self._store.async_save(
+            {"value": float(self._attr_native_value or 0.0)}
+        )
+        await super().async_will_remove_from_hass()
