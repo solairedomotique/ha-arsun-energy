@@ -1,3 +1,6 @@
+## 0.4.6
+- Modification du seul lien « Visiter » de la fiche appareil : https://solaire-domotique.fr/ha/github/arsun/.
+
 ## 0.4.5
 - Présentation graphique des trois partenaires dans le README avec leurs logos hébergés sur solaire-domotique.fr.
 - Logos cliquables vers les sites officiels ; le logo Solaire Domotique donne également accès à la chaîne YouTube.
